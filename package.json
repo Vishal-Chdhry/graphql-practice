@@ -4,14 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "Vishal Choudhary",
   "license": "MIT",
   "dependencies": {
     "apollo-server": "^3.6.7",
-    "graphql": "^16.3.0",
-    "ts-node": "^10.7.0"
+    "graphql": "^16.3.0"
   }
 }
