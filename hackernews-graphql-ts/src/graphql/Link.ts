@@ -7,21 +7,27 @@ export const Link = objectType({
     t.nonNull.int('id');
     t.nonNull.string('description');
     t.nonNull.string('url');
+    t.nonNull.dateTime('createdAt');
+    t.field('postedBy', {
+      type: 'User',
+      resolve(parent, args, context) {
+        return context.prisma.link
+          .findUnique({where: {id: parent.id}})
+          .postedBy();
+      },
+    });
+    t.nonNull.list.nonNull.field('voters', {
+      type: 'User',
+      resolve(parent, args, context) {
+        return context.prisma.link
+          .findUnique({where: {id: parent.id}})
+          .voters();
+      },
+    });
   },
 });
 
-let links: NexusGenObjects['Link'][] = [
-  {
-    id: 1,
-    url: 'https://howtographql.com',
-    description: 'Full Stack tutorial for graphql',
-  },
-  {
-    id: 3,
-    url: 'https://graphql.org',
-    description: 'GraphQL offical website',
-  },
-];
+let links: NexusGenObjects['Link'][] = [];
 
 export const LinkQuery = extendType({
   type: 'Query',
@@ -29,7 +35,7 @@ export const LinkQuery = extendType({
     t.nonNull.list.nonNull.field('feed', {
       type: 'Link',
       resolve(parent, args, context, info) {
-        return links;
+        return context.prisma.link.findMany();
       },
     });
   },
@@ -66,17 +72,19 @@ export const LinkMutation = extendType({
 
       resolve(parent, args, context, info) {
         const {description, url} = args;
+        const {userId} = context;
 
-        let idCount = links.length + 1;
-        const link = {
-          id: idCount,
-          description: description,
-          url: url,
-        };
+        if (!userId) throw new Error('Cannot post without logging in');
 
-        links.push(link);
+        const newLink = context.prisma.link.create({
+          data: {
+            description,
+            url,
+            postedBy: {connect: {id: userId}},
+          },
+        });
 
-        return link;
+        return newLink;
       },
     });
   },
