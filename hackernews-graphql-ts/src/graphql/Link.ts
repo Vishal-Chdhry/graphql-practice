@@ -1,5 +1,30 @@
-import {extendType, idArg, intArg, nonNull, objectType, stringArg} from 'nexus';
+import {
+  enumType,
+  extendType,
+  idArg,
+  inputObjectType,
+  intArg,
+  list,
+  arg,
+  nonNull,
+  objectType,
+  stringArg,
+} from 'nexus';
 import {NexusGenObjects} from '../../nexus-typegen';
+
+export const LinkOrderByInput = inputObjectType({
+  name: 'LinkOrderByInput',
+  definition(t) {
+    t.field('description', {type: Sort});
+    t.field('url', {type: Sort});
+    t.field('createdAt', {type: Sort});
+  },
+});
+
+export const Sort = enumType({
+  name: 'Sort',
+  members: ['asc', 'desc'],
+});
 
 export const Link = objectType({
   name: 'Link',
@@ -34,8 +59,26 @@ export const LinkQuery = extendType({
   definition(t) {
     t.nonNull.list.nonNull.field('feed', {
       type: 'Link',
-      resolve(parent, args, context, info) {
-        return context.prisma.link.findMany();
+      args: {
+        filter: stringArg(),
+        skip: intArg(),
+        take: intArg(),
+        orderBy: arg({type: list(nonNull(LinkOrderByInput))}),
+      },
+      resolve(parent, args, context) {
+        const where = args.filter
+          ? {
+              OR: [
+                {description: {contains: args.filter}},
+                {url: {contains: args.filter}},
+              ],
+            }
+          : {};
+        return context.prisma.link.findMany({
+          where,
+          skip: args?.skip as number | undefined,
+          take: args?.take as number | undefined,
+        });
       },
     });
   },
